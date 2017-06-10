@@ -37,16 +37,21 @@ interface BuildLocator {
      * By default only successful builds are returned, call this method to include failed builds as well.
      */
     fun withAnyStatus() : BuildLocator
-
     fun withStatus(status: BuildStatus): BuildLocator
+
     fun withTag(tag: String): BuildLocator
 
-    fun withBranch(branch: String): BuildLocator
+    /**
+     * By default failed to start builds are filtered out, call this method to include them.
+     */
+    fun withAnyFailedToStart(): BuildLocator
+    fun withFailedToStart(value: Boolean): BuildLocator
 
     /**
      * By default only builds from the default branch are returned, call this method to include builds from all branches.
      */
     fun withAllBranches() : BuildLocator
+    fun withBranch(branch: String): BuildLocator
 
     fun pinnedOnly(): BuildLocator
 
@@ -106,7 +111,8 @@ interface Build {
     val buildTypeId: String
     val buildNumber: String
     val status: BuildStatus
-    val branch : Branch
+    val branch: Branch
+    val failedToStart: Boolean
 
     fun fetchStatusText(): String
     fun fetchQueuedDate(): Date

@@ -72,6 +72,7 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
     private var branch: String? = null
     private var includeAllBranches = false
     private var pinnedOnly = false
+    private var failedToStart: Boolean? = false
 
     override fun fromConfiguration(buildConfigurationId: BuildConfigurationId): BuildLocator {
         this.buildConfigurationId = buildConfigurationId
@@ -90,6 +91,16 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
 
     override fun withTag(tag: String): BuildLocator {
         tags.add(tag)
+        return this
+    }
+
+    override fun withAnyFailedToStart(): BuildLocator {
+        failedToStart = null
+        return this
+    }
+
+    override fun withFailedToStart(value: Boolean): BuildLocator {
+        failedToStart = value
         return this
     }
 
@@ -120,6 +131,7 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
         val parameters = listOf(
                 buildConfigurationId?.stringId?.let {"buildType:$it"},
                 status?.name?.let {"status:$it"},
+                if (failedToStart != FAILED_TO_START_DEFAULT) "failedToStart:${failedToStart.toQueryArg()}" else null,
                 if (!tags.isEmpty())
                     tags.joinToString(",", prefix = "tags:(", postfix = ")")
                 else null,
@@ -296,12 +308,22 @@ private class BuildImpl(private val bean: BuildBean,
     override val branch: Branch
         get() = BranchImpl(bean.branchName, bean.isDefaultBranch ?: (bean.branchName == null))
 
+    override val failedToStart: Boolean
+        get() = bean.failedToStart ?: FAILED_TO_START_DEFAULT
+
     val fullBuildBean: BuildBean by lazy {
         if (isFullBuildBean) bean else service.build(id.stringId)
     }
 
     override fun toString(): String {
-        return "Build{id=$id, buildTypeId=$buildTypeId, buildNumber=$buildNumber, status=$status, branch=$branch}"
+        return "Build{" +
+                "id=$id, " +
+                "buildTypeId=$buildTypeId, " +
+                "buildNumber=$buildNumber, " +
+                "status=$status, " +
+                "branch=$branch, " +
+                "failedToStart=$failedToStart" +
+                "}"
     }
 
     override fun fetchStatusText(): String = fullBuildBean.statusText!!
@@ -402,3 +424,11 @@ private class BuildArtifactImpl(private val build: Build, override val fileName:
 private fun convertToJavaRegexp(pattern: String): Regex {
     return pattern.replace(".", "\\.").replace("*", ".*").replace("?", ".").toRegex()
 }
+
+private fun Boolean?.toQueryArg() = when (this) {
+    true -> "true"
+    false -> "false"
+    null -> "any"
+}
+
+private val FAILED_TO_START_DEFAULT = false
