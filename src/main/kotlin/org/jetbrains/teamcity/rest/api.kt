@@ -31,6 +31,9 @@ interface VcsRootLocator {
 }
 
 interface BuildLocator {
+    fun withId(buildId: BuildId): BuildLocator
+    fun withNumber(number: String): BuildLocator
+
     fun fromConfiguration(buildConfigurationId: BuildConfigurationId): BuildLocator
 
     /**
@@ -52,6 +55,8 @@ interface BuildLocator {
      */
     fun withAllBranches() : BuildLocator
     fun withBranch(branch: String): BuildLocator
+
+    fun withSinceBuild(locator: BuildLocator): BuildLocator
 
     fun pinnedOnly(): BuildLocator
 
