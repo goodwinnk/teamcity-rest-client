@@ -122,4 +122,20 @@ class BuildTest {
                     newer.id, newerWithSinceByNumber.id)
         }
     }
+
+    @Test
+    fun test_fetch_dates() {
+        val build = publicInstance().builds()
+                .fromConfiguration(compileExamplesConfiguration)
+                .withAnyStatus()
+                .limitResults(1)
+                .latest()!!
+
+        val queuedDate = build.fetchQueuedDate()
+        val startDate = build.fetchStartDate()
+        val finishDate = build.fetchFinishDate()
+
+        Assert.assertTrue(startDate > queuedDate)
+        Assert.assertTrue(finishDate > startDate)
+    }
 }
