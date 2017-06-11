@@ -12,8 +12,7 @@ class BuildTest {
 
     @Test
     fun test_to_string() {
-        val builds = publicInstance().builds()
-                .fromConfiguration(compileExamplesConfiguration)
+        val builds = compileExamplesConfigurationBuilds()
                 .limitResults(3)
                 .list()
 
@@ -22,8 +21,7 @@ class BuildTest {
 
     @Test
     fun test_build_fetch_revisions() {
-        publicInstance().builds()
-                .fromConfiguration(compileExamplesConfiguration)
+        compileExamplesConfigurationBuilds()
                 .limitResults(10)
                 .list()
                 .forEach {
@@ -34,8 +32,7 @@ class BuildTest {
 
     @Test
     fun test_fetch_status() {
-        val build = publicInstance().builds()
-                .fromConfiguration(compileExamplesConfiguration)
+        val build = compileExamplesConfigurationBuilds()
                 .limitResults(1)
                 .list().first()
 
@@ -45,9 +42,7 @@ class BuildTest {
     @Test
     fun test_failed_to_start_build() {
         fun getBuildWithFailedToStart(failedToStart: Boolean?): Build? {
-            val locator = publicInstance().builds()
-                    .fromConfiguration(compileExamplesConfiguration)
-                    .limitResults(1)
+            val locator = compileExamplesConfigurationBuilds().limitResults(1)
 
             if (failedToStart != null) {
                 locator.withFailedToStart(failedToStart)
@@ -87,8 +82,7 @@ class BuildTest {
 
     @Test
     fun test_since_build() {
-        val builds = publicInstance().builds()
-                .fromConfiguration(compileExamplesConfiguration)
+        val builds = compileExamplesConfigurationBuilds()
                 .withAnyStatus()
                 .limitResults(2)
                 .list()
@@ -100,8 +94,7 @@ class BuildTest {
 
         run {
             val sinceLocatorById = publicInstance().builds().withAnyStatus().withId(olderBuild.id)
-            val newerWithSinceById = publicInstance().builds()
-                    .fromConfiguration(compileExamplesConfiguration)
+            val newerWithSinceById = compileExamplesConfigurationBuilds()
                     .withAnyStatus()
                     .withSinceBuild(sinceLocatorById)
                     .list().last()
@@ -111,8 +104,7 @@ class BuildTest {
 
         run {
             // NOTE: Configuration is mandatory in since locator
-            val sinceLocatorByNumber = publicInstance().builds()
-                    .fromConfiguration(compileExamplesConfiguration).withAnyStatus().withNumber(olderBuild.buildNumber)
+            val sinceLocatorByNumber = compileExamplesConfigurationBuilds().withAnyStatus().withNumber(olderBuild.buildNumber)
             val newerWithSinceByNumber = publicInstance().builds()
                     .fromConfiguration(compileExamplesConfiguration)
                     .withAnyStatus()
@@ -125,8 +117,7 @@ class BuildTest {
 
     @Test
     fun test_fetch_dates() {
-        val build = publicInstance().builds()
-                .fromConfiguration(compileExamplesConfiguration)
+        val build = compileExamplesConfigurationBuilds()
                 .withAnyStatus()
                 .limitResults(1)
                 .latest()!!
@@ -138,4 +129,7 @@ class BuildTest {
         Assert.assertTrue(startDate > queuedDate)
         Assert.assertTrue(finishDate > startDate)
     }
+
+    private fun compileExamplesConfigurationBuilds() =
+            publicInstance().builds().fromConfiguration(compileExamplesConfiguration)
 }
