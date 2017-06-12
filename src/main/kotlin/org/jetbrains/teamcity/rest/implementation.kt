@@ -76,6 +76,7 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
     private var pinnedOnly = false
     private var failedToStart: Boolean? = false
     private var sinceBuild: BuildLocatorImpl? = null
+    private var finishDateQuery: DateQuery? = null
 
     override fun withId(buildId: BuildId): BuildLocator {
         this.buildId = buildId
@@ -131,6 +132,22 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
         return this
     }
 
+    override fun withSinceBuild(locator: BuildLocator): BuildLocator {
+        this.sinceBuild = (locator as? BuildLocatorImpl) ?:
+                throw IllegalArgumentException("Only ${BuildLocatorImpl::class} is supported now")
+        return this
+    }
+
+    override fun pinnedOnly(): BuildLocator {
+        this.pinnedOnly = true
+        return this
+    }
+
+    override fun withFinishDateQuery(query: DateQuery): BuildLocator {
+        this.finishDateQuery = query
+        return this
+    }
+
     override fun limitResults(count: Int): BuildLocator {
         this.count = count
         return this
@@ -140,7 +157,7 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
         return limitResults(1).list().firstOrNull()
     }
 
-    private fun buildLocatorString(): String {
+    fun toBuildLocatorString(): String {
         val parameters = listOf(
                 buildId?.let { "id:${it.stringId}" },
                 buildNumber?.let { "number:$it" },
@@ -158,7 +175,8 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
                 else
                     "branch:default:any",
 
-                sinceBuild?.let { "sinceBuild:(${it.buildLocatorString()})" }
+                sinceBuild?.let { "sinceBuild:(${it.toBuildLocatorString()})" },
+                finishDateQuery?.let { "finishDate:(${it.toDateQueryString()})" }
         ).filterNotNull()
 
         if (parameters.isEmpty()) {
@@ -169,20 +187,9 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
     }
 
     override fun list(): List<Build> {
-        val buildLocator = buildLocatorString()
+        val buildLocator = toBuildLocatorString()
         LOG.debug("Retrieving builds from $serverUrl using query '$buildLocator'")
         return service.builds(buildLocator).build.map { BuildImpl(it, false, service) }
-    }
-
-    override fun withSinceBuild(locator: BuildLocator): BuildLocator {
-        this.sinceBuild = (locator as? BuildLocatorImpl) ?:
-                throw IllegalArgumentException("Only ${BuildLocatorImpl::class} supported now")
-        return this
-    }
-
-    override fun pinnedOnly(): BuildLocator {
-        this.pinnedOnly = true
-        return this
     }
 }
 
@@ -450,6 +457,31 @@ private class BuildArtifactImpl(private val build: Build, override val fileName:
 
 private fun convertToJavaRegexp(pattern: String): Regex {
     return pattern.replace(".", "\\.").replace("*", ".*").replace("?", ".").toRegex()
+}
+
+private fun DateQuery.toDateQueryString(): String {
+    if (date == null && buildLocator == null) {
+        throw IllegalArgumentException("Date or Build locator should specified")
+    }
+
+    return with(StringBuilder()) {
+        append("condition:" + when (condition) {
+            DateCondition.BEFORE -> "before"
+            DateCondition.AFTER -> "after"
+        })
+
+        if (buildLocator != null) {
+            val buildLocatorImpl = (buildLocator as? BuildLocatorImpl) ?:
+                    throw IllegalArgumentException("Only ${BuildLocatorImpl::class} is supported now in ${DateQuery::class}")
+            append(",build:(${buildLocatorImpl.toBuildLocatorString()})")
+        }
+
+        if (date != null) {
+            append(",date:${teamCityServiceDateFormat.get().format(date)}")
+        }
+
+        toString()
+    }
 }
 
 private fun Boolean?.toQueryArg() = when (this) {

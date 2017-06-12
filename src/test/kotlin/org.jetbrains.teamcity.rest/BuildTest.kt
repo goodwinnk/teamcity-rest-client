@@ -130,6 +130,74 @@ class BuildTest {
         Assert.assertTrue(finishDate > startDate)
     }
 
+    @Test
+    fun test_after_finish_date_query() {
+        val builds = compileExamplesConfigurationBuilds()
+                .withAnyStatus()
+                .limitResults(2)
+                .list()
+
+        Assert.assertEquals("Two builds expected", 2, builds.size)
+
+        val newer = builds[0]
+        val older = builds[1]
+
+        run {
+            val afterOlderById = compileExamplesConfigurationBuilds()
+                    .withAnyStatus()
+                    .withFinishDateQuery(
+                            afterBuildQuery(publicInstance().builds().withAnyStatus().withId(older.id))
+                    )
+                    .list().last()
+
+            Assert.assertEquals("After query by id should fetch same newer build", newer.id, afterOlderById.id)
+        }
+
+        run {
+            val afterOlderByDate = compileExamplesConfigurationBuilds()
+                    .withAnyStatus()
+                    .withFinishDateQuery(afterDateQuery(older.fetchFinishDate()))
+                    .list().last()
+
+            Assert.assertEquals("After query by date should fetch same newer build", newer.id, afterOlderByDate.id)
+        }
+    }
+
+    @Test
+    fun test_before_finish_date_query() {
+        val builds = compileExamplesConfigurationBuilds()
+                .withAnyStatus()
+                .limitResults(2)
+                .list()
+
+        Assert.assertEquals("Two builds expected", 2, builds.size)
+
+        val newer = builds[0]
+        val older = builds[1]
+
+        run {
+            val beforeNewerById = compileExamplesConfigurationBuilds()
+                    .withAnyStatus()
+                    .withFinishDateQuery(
+                            beforeBuildQuery(publicInstance().builds().withAnyStatus().withId(newer.id))
+                    )
+                    .limitResults(1)
+                    .latest()!!
+
+            Assert.assertEquals("Before query by id should fetch same older build", older.id, beforeNewerById.id)
+        }
+
+        run {
+            val beforeNewerByDate = compileExamplesConfigurationBuilds()
+                    .withAnyStatus()
+                    .withFinishDateQuery(beforeDateQuery(newer.fetchFinishDate()))
+                    .limitResults(1)
+                    .latest()!!
+
+            Assert.assertEquals("Before query by date should fetch same older build", older.id, beforeNewerByDate.id)
+        }
+    }
+
     private fun compileExamplesConfigurationBuilds() =
             publicInstance().builds().fromConfiguration(compileExamplesConfiguration)
 }

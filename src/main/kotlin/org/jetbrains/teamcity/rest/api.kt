@@ -30,6 +30,17 @@ interface VcsRootLocator {
     fun list(): List<VcsRoot>
 }
 
+enum class DateCondition {
+    BEFORE,
+    AFTER
+}
+
+data class DateQuery(val condition: DateCondition, val date: Date? = null, val buildLocator: BuildLocator? = null)
+fun afterDateQuery(date: Date) = DateQuery(DateCondition.AFTER, date)
+fun beforeDateQuery(date: Date) = DateQuery(DateCondition.BEFORE, date)
+fun afterBuildQuery(buildLocator: BuildLocator) = DateQuery(DateCondition.AFTER, buildLocator = buildLocator)
+fun beforeBuildQuery(buildLocator: BuildLocator) = DateQuery(DateCondition.BEFORE, buildLocator = buildLocator)
+
 interface BuildLocator {
     fun withId(buildId: BuildId): BuildLocator
     fun withNumber(number: String): BuildLocator
@@ -61,6 +72,8 @@ interface BuildLocator {
     fun pinnedOnly(): BuildLocator
 
     fun limitResults(count: Int): BuildLocator
+
+    fun withFinishDateQuery(query: DateQuery): BuildLocator
 
     fun latest(): Build?
     fun list(): List<Build>
