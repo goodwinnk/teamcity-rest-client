@@ -74,6 +74,7 @@ interface BuildLocator {
     fun limitResults(count: Int): BuildLocator
 
     fun withFinishDateQuery(query: DateQuery): BuildLocator
+    fun withStartDateQuery(query: DateQuery): BuildLocator
 
     fun latest(): Build?
     fun list(): List<Build>

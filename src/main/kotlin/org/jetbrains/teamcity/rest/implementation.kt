@@ -77,6 +77,7 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
     private var failedToStart: Boolean? = false
     private var sinceBuild: BuildLocatorImpl? = null
     private var finishDateQuery: DateQuery? = null
+    private var startDateQuery: DateQuery? = null
 
     override fun withId(buildId: BuildId): BuildLocator {
         this.buildId = buildId
@@ -148,6 +149,11 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
         return this
     }
 
+    override fun withStartDateQuery(query: DateQuery): BuildLocator {
+        this.startDateQuery = query
+        return this
+    }
+
     override fun limitResults(count: Int): BuildLocator {
         this.count = count
         return this
@@ -176,7 +182,8 @@ private class BuildLocatorImpl(private val service: TeamCityService, private val
                     "branch:default:any",
 
                 sinceBuild?.let { "sinceBuild:(${it.toBuildLocatorString()})" },
-                finishDateQuery?.let { "finishDate:(${it.toDateQueryString()})" }
+                finishDateQuery?.let { "finishDate:(${it.toDateQueryString()})" },
+                startDateQuery?.let { "startDate:(${it.toDateQueryString()})" }
         ).filterNotNull()
 
         if (parameters.isEmpty()) {

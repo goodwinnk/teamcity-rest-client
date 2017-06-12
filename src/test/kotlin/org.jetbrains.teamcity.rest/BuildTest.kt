@@ -142,6 +142,12 @@ class BuildTest {
         val newer = builds[0]
         val older = builds[1]
 
+        if (newer.fetchFinishDate() <= older.fetchFinishDate()) {
+            // In general this condition is false, but it might happen that more recent build had
+            // finished before the older one
+            return
+        }
+
         run {
             val afterOlderById = compileExamplesConfigurationBuilds()
                     .withAnyStatus()
@@ -164,7 +170,7 @@ class BuildTest {
     }
 
     @Test
-    fun test_before_finish_date_query() {
+    fun test_before_start_date_query() {
         val builds = compileExamplesConfigurationBuilds()
                 .withAnyStatus()
                 .limitResults(2)
@@ -178,7 +184,7 @@ class BuildTest {
         run {
             val beforeNewerById = compileExamplesConfigurationBuilds()
                     .withAnyStatus()
-                    .withFinishDateQuery(
+                    .withStartDateQuery(
                             beforeBuildQuery(publicInstance().builds().withAnyStatus().withId(newer.id))
                     )
                     .limitResults(1)
@@ -190,7 +196,7 @@ class BuildTest {
         run {
             val beforeNewerByDate = compileExamplesConfigurationBuilds()
                     .withAnyStatus()
-                    .withFinishDateQuery(beforeDateQuery(newer.fetchFinishDate()))
+                    .withStartDateQuery(beforeDateQuery(newer.fetchStartDate()))
                     .limitResults(1)
                     .latest()!!
 
